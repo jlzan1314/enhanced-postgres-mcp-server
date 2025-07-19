@@ -1,126 +1,110 @@
-# PostgreSQL MCP Server (Enhanced)
+# PostgreSQL MCP 服务器（增强版）
 
-A Model Context Protocol server that provides both read and write access to PostgreSQL databases. This server enables LLMs to inspect database schemas, execute queries, modify data, and create/modify database schema objects.
+一个模型上下文协议服务器，提供对PostgreSQL数据库的读写访问。该服务器使LLM能够检查数据库模式、执行查询、修改数据以及创建/修改数据库模式对象。
 
-> **Note:** This is an enhanced version of the original [PostgreSQL MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/postgres) by Anthropic. The original server provides read-only access, while this enhanced version adds write capabilities and schema management.
+> **注意：** 这是Anthropic原始[PostgreSQL MCP服务器](https://github.com/modelcontextprotocol/servers/tree/main/src/postgres)的增强版本。原始服务器仅提供只读访问，而此增强版本添加了写入功能和模式管理。
 
-## Components
+## 组件
 
-### Tools
+### 工具
 
-#### Data Query
+#### 数据查询
 - **query**
-  - Execute read-only SQL queries against the connected database
-  - Input: `sql` (string): The SQL query to execute
-  - All queries are executed within a READ ONLY transaction
+  - 对连接的数据库执行只读SQL查询
+  - 输入：`sql`（字符串）：要执行的SQL查询
+  - 所有查询都在只读事务中执行
 
-#### Data Modification
+#### 数据修改
 - **execute**
-  - Execute a SQL statement that modifies data (INSERT, UPDATE, DELETE)
-  - Input: `sql` (string): The SQL statement to execute
-  - Executed within a transaction with proper COMMIT/ROLLBACK handling
+  - 执行修改数据的SQL语句（INSERT、UPDATE、DELETE）
+  - 输入：`sql`（字符串）：要执行的SQL语句
+  - 在具有适当COMMIT/ROLLBACK处理的事务中执行
 
 - **insert**
-  - Insert a new record into a table
-  - Input: 
-    - `table` (string): The table name
-    - `data` (object): Key-value pairs where keys are column names and values are the data to insert
+  - 向表中插入新记录
+  - 输入：
+    - `table`（字符串）：表名
+    - `data`（对象）：键值对，其中键是列名，值是要插入的数据
 
 - **update**
-  - Update records in a table
-  - Input: 
-    - `table` (string): The table name
-    - `data` (object): Key-value pairs for the fields to update
-    - `where` (string): The WHERE condition to identify records to update
+  - 更新表中的记录
+  - 输入：
+    - `table`（字符串）：表名
+    - `data`（对象）：要更新字段的键值对
+    - `where`（字符串）：用于标识要更新记录的WHERE条件
 
 - **delete**
-  - Delete records from a table
-  - Input: 
-    - `table` (string): The table name
-    - `where` (string): The WHERE condition to identify records to delete
+  - 从表中删除记录
+  - 输入：
+    - `table`（字符串）：表名
+    - `where`（字符串）：用于标识要删除记录的WHERE条件
 
-#### Schema Management
+#### 模式管理
 - **createTable**
-  - Create a new table with specified columns and constraints
-  - Input:
-    - `tableName` (string): The table name
-    - `columns` (array): Array of column definitions with name, type, and optional constraints
-    - `constraints` (array): Optional array of table-level constraints
+  - 创建具有指定列和约束的新表
+  - 输入：
+    - `tableName`（字符串）：表名
+    - `columns`（数组）：列定义数组，包含名称、类型和可选约束
+    - `constraints`（数组）：可选的表级约束数组
 
 - **createFunction**
-  - Create a PostgreSQL function/procedure
-  - Input:
-    - `name` (string): Function name
-    - `parameters` (string): Function parameters
-    - `returnType` (string): Return type
-    - `language` (string): Language (plpgsql, sql, etc.)
-    - `body` (string): Function body
-    - `options` (string): Optional additional function options
+  - 创建PostgreSQL函数/过程
+  - 输入：
+    - `name`（字符串）：函数名
+    - `parameters`（字符串）：函数参数
+    - `returnType`（字符串）：返回类型
+    - `language`（字符串）：语言（plpgsql、sql等）
+    - `body`（字符串）：函数体
+    - `options`（字符串）：可选的附加函数选项
 
 - **createTrigger**
-  - Create a trigger on a table
-  - Input:
-    - `name` (string): Trigger name
-    - `tableName` (string): Table to apply trigger to
-    - `functionName` (string): Function to call
-    - `when` (string): BEFORE, AFTER, or INSTEAD OF
-    - `events` (array): Array of events (INSERT, UPDATE, DELETE)
-    - `forEach` (string): ROW or STATEMENT
-    - `condition` (string): Optional WHEN condition
+  - 在表上创建触发器
+  - 输入：
+    - `name`（字符串）：触发器名称
+    - `tableName`（字符串）：应用触发器的表
+    - `functionName`（字符串）：要调用的函数
+    - `when`（字符串）：BEFORE、AFTER或INSTEAD OF
+    - `events`（数组）：事件数组（INSERT、UPDATE、DELETE）
+    - `forEach`（字符串）：ROW或STATEMENT
+    - `condition`（字符串）：可选的WHEN条件
 
 - **createIndex**
-  - Create an index on a table
-  - Input:
-    - `tableName` (string): Table name
-    - `indexName` (string): Index name
-    - `columns` (array): Columns to index
-    - `unique` (boolean): Whether the index is unique
-    - `type` (string): Optional index type (BTREE, HASH, GIN, GIST, etc.)
-    - `where` (string): Optional condition
+  - 在表上创建索引
+  - 输入：
+    - `tableName`（字符串）：表名
+    - `indexName`（字符串）：索引名
+    - `columns`（数组）：要索引的列
+    - `unique`（布尔值）：索引是否唯一
+    - `type`（字符串）：可选的索引类型（BTREE、HASH、GIN、GIST等）
+    - `where`（字符串）：可选条件
 
 - **alterTable**
-  - Alter a table structure
-  - Input:
-    - `tableName` (string): Table name
-    - `operation` (string): Operation (ADD COLUMN, DROP COLUMN, etc.)
-    - `details` (string): Operation details
+  - 修改表结构
+  - 输入：
+    - `tableName`（字符串）：表名
+    - `operation`（字符串）：操作（ADD COLUMN、DROP COLUMN等）
+    - `details`（字符串）：操作详情
 
-### Resources
+### 资源
 
-The server provides schema information for each table in the database:
+服务器为数据库中的每个表提供模式信息：
 
-- **Table Schemas** (`postgres://<host>/<table>/schema`)
-  - JSON schema information for each table
-  - Includes column names and data types
-  - Automatically discovered from database metadata
+- **表模式**（`postgres://<host>/<table>/schema`）
+  - 每个表的JSON模式信息
+  - 包括列名和数据类型
+  - 从数据库元数据自动发现
 
-## Usage with Claude Desktop
+## 在Claude Desktop中使用
 
-To use this server with the Claude Desktop app, add the following configuration to the "mcpServers" section of your `claude_desktop_config.json`:
+要在Claude Desktop应用程序中使用此服务器，请将以下配置添加到`claude_desktop_config.json`的"mcpServers"部分：
 
 ### Docker
+* docker镜像需要自己编译
+* 在macOS上运行docker时，如果服务器在主机网络上运行（例如localhost），请使用host.docker.internal
+* 用户名/密码可以通过`postgresql://user:password@host:port/db-name`添加到postgresql url中
+* 如果需要绕过SSL证书验证，请添加`?sslmode=no-verify`
 
-* when running docker on macos, use host.docker.internal if the server is running on the host network (eg localhost)
-* username/password can be added to the postgresql url with `postgresql://user:password@host:port/db-name`
-* add `?sslmode=no-verify` if you need to bypass SSL certificate verification
-
-```json
-{
-  "mcpServers": {
-    "postgres": {
-      "command": "docker",
-      "args": [
-        "run", 
-        "-i", 
-        "--rm", 
-        "mcp/postgres", 
-        "postgresql://host.docker.internal:5432/mydb"]
-    }
-  }
-}
-```
-
-### NPX
+### NPM包（推荐）
 
 ```json
 {
@@ -129,34 +113,39 @@ To use this server with the Claude Desktop app, add the following configuration 
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://localhost/mydb"
+        "enhanced-postgres-mcp-server",
+        "postgresql://username:password@localhost:5432/mydb"
       ]
     }
   }
 }
 ```
 
-Replace `/mydb` with your database name.
+**连接字符串格式说明：**
+- `postgresql://username:password@localhost:5432/mydb` - 包含用户名和密码的完整格式
+- `postgresql://localhost/mydb` - 使用默认用户的简化格式
+- `postgresql://postgres:mypassword@localhost:5432/mydatabase` - 示例：用户名postgres，密码mypassword，数据库mydatabase
 
-## Example Usage
+将连接字符串中的参数替换为您的实际数据库配置。
 
-### Query Data
+## 使用示例
+
+### 查询数据
 ```
 /query SELECT * FROM users LIMIT 5
 ```
 
-### Insert Data
+### 插入数据
 ```
-/insert table="users", data={"name": "John Doe", "email": "john@example.com"}
+/insert table="users", data={"name": "张三", "email": "zhangsan@example.com"}
 ```
 
-### Update Data
+### 更新数据
 ```
 /update table="users", data={"status": "inactive"}, where="id='123'"
 ```
 
-### Create a Table
+### 创建表
 ```
 /createTable tableName="tasks", columns=[
   {"name": "id", "type": "SERIAL", "constraints": "PRIMARY KEY"}, 
@@ -165,27 +154,27 @@ Replace `/mydb` with your database name.
 ]
 ```
 
-### Create a Function and Trigger
+### 创建函数和触发器
 ```
 /createFunction name="update_timestamp", parameters="", returnType="TRIGGER", language="plpgsql", body="BEGIN NEW.updated_at = NOW(); RETURN NEW; END;"
 
 /createTrigger name="set_timestamp", tableName="tasks", functionName="update_timestamp", when="BEFORE", events=["UPDATE"], forEach="ROW"
 ```
 
-## Building
+## 构建
 
-Docker:
+Docker：
 
 ```sh
 docker build -t mcp/postgres -f Dockerfile . 
 ```
 
-## Security Considerations
+## 安全考虑
 
-1. All data modification operations use transactions with proper COMMIT/ROLLBACK handling
-2. Each operation returns the SQL that was executed for transparency
-3. The server uses parameterized queries for insert/update operations to prevent SQL injection
+1. 所有数据修改操作都使用具有适当COMMIT/ROLLBACK处理的事务
+2. 每个操作都返回执行的SQL以确保透明度
+3. 服务器对插入/更新操作使用参数化查询以防止SQL注入
 
-## License
+## 许可证
 
-This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+此MCP服务器根据MIT许可证授权。这意味着您可以自由使用、修改和分发软件，但需遵守MIT许可证的条款和条件。有关更多详细信息，请参阅项目存储库中的LICENSE文件。
