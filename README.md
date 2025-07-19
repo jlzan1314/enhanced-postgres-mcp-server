@@ -126,13 +126,51 @@
 - `postgresql://localhost/mydb` - 使用默认用户的简化格式
 - `postgresql://postgres:mypassword@localhost:5432/mydatabase` - 示例：用户名postgres，密码mypassword，数据库mydatabase
 
+**SSL连接支持：**
+服务器支持多种SSL配置方式，可以根据您的数据库环境选择合适的方法：
+
+1. **URL参数方式（推荐）：**
+   - `postgresql://username:password@host:5432/db?ssl=true` - 启用SSL连接
+   - `postgresql://username:password@host:5432/db?sslmode=require` - 要求SSL连接
+   - `postgresql://username:password@host:5432/db?sslmode=no-verify` - SSL连接但跳过证书验证
+
+2. **环境变量方式：**
+   - 设置 `POSTGRES_SSL=true` 环境变量来启用SSL
+   - 设置 `POSTGRES_SSL_FORCE=true` 强制启用SSL（覆盖URL设置）
+   - 设置 `POSTGRES_SSL_REJECT_UNAUTHORIZED=true` 启用严格的证书验证（默认为false）
+
+3. **自动SSL检测：**
+   - 远程连接（非localhost/127.0.0.1）会自动启用SSL
+   - 本地连接默认不使用SSL，除非明确指定
+
+**SSL配置示例：**
+```json
+{
+  "mcpServers": {
+    "postgres-ssl": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "enhanced-postgres-mcp-server",
+        "postgresql://username:password@remote-db.example.com:5432/mydb?ssl=true"
+      ]
+    }
+  }
+}
+```
+
+**注意事项：**
+- 对于自签名证书或开发环境，建议使用 `?sslmode=no-verify` 或设置 `POSTGRES_SSL_REJECT_UNAUTHORIZED=false`
+- 生产环境建议使用有效的SSL证书并启用证书验证
+- 如果数据库要求SSL连接，请确保在连接字符串中包含相应的SSL参数
+
 将连接字符串中的参数替换为您的实际数据库配置。
 
 ## 使用示例
 
 ### 查询数据
 ```
-/query SELECT * FROM users LIMIT 5
+/query SELECT * FROM postgres_log LIMIT 5
 ```
 
 ### 插入数据

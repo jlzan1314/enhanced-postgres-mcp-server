@@ -35,8 +35,35 @@ const resourceBaseUrl = new URL(databaseUrl);
 resourceBaseUrl.protocol = "postgres:";
 resourceBaseUrl.password = "";
 
+// 解析数据库URL以确定是否需要SSL
+const dbUrl = new URL(databaseUrl);
+
+// 多种方式确定是否需要SSL：
+// 1. 显式在URL中指定 ssl=true 或 sslmode=require
+// 2. 环境变量 POSTGRES_SSL=true
+// 3. 非本地连接默认启用SSL
+// 4. 可以通过环境变量 POSTGRES_SSL_FORCE=true 强制启用
+const explicitSSL = dbUrl.searchParams.get('sslmode') === 'require' || 
+                    dbUrl.searchParams.get('ssl') === 'true';
+const envSSL = process.env.POSTGRES_SSL === 'true';
+const forceSSL = process.env.POSTGRES_SSL_FORCE === 'true';
+const isRemote = dbUrl.hostname !== 'localhost' && dbUrl.hostname !== '127.0.0.1';
+
+const requireSSL = explicitSSL || envSSL || forceSSL || isRemote;
+
+// SSL配置选项
+const sslConfig = requireSSL ? {
+  rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED === 'true' // 默认为false以支持自签名证书
+} : false;
+
 const pool = new pg.Pool({
   connectionString: databaseUrl,
+  // 根据多种条件智能配置SSL
+  ssl: sslConfig,
+  // 连接池配置
+  max: parseInt(process.env.POSTGRES_POOL_MAX || '20'), // 最大连接数
+  idleTimeoutMillis: parseInt(process.env.POSTGRES_IDLE_TIMEOUT || '30000'), // 空闲连接超时时间
+  connectionTimeoutMillis: parseInt(process.env.POSTGRES_CONNECTION_TIMEOUT || '5000'), // 连接超时时间
 });
 
 const SCHEMA_PATH = "schema";
