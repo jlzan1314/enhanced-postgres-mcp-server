@@ -18,7 +18,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/*.js",
+    "build": "tsc",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
